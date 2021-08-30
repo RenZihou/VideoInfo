@@ -8,7 +8,7 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 
 ### Web Crawling
 
-- [ ] video list
+- [x] video list
 - [x] video detail - 2021/08/30
 - [ ] massive data
 

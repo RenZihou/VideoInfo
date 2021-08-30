@@ -1,6 +1,10 @@
 # -*- encoding: utf-8 -*-
 # @Author: RZH
 
+"""
+provide access to database and several functions
+"""
+
 import sqlite3
 
 

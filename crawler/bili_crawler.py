@@ -5,10 +5,10 @@
 maintain the crawler
 """
 
+from datetime import datetime, timedelta
 import logging
 import requests
 from typing import List
-from lxml import etree
 
 from crawler.database import BiliDB
 
@@ -21,11 +21,12 @@ class BiliCrawler(object):
     """
     Bilibili Crawler. Used to crawl hot videos.
     """
-    # url = 'https://www.bilibili.com/v/popular/all'
     headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) '
                              'Chrome/92.0.4515.159 Safari/537.36'}
     api_cid = 'https://api.bilibili.com/x/player/pagelist'
     api_detail = 'https://api.bilibili.com/x/web-interface/view'
+    url_popular = 'https://s.search.bilibili.com/cate/search'
+    bvid_list: List[str] = []
 
     def __init__(self):
         self.bvid: str = ''
@@ -39,7 +40,28 @@ class BiliCrawler(object):
         get popular video list: video url, title, up, play, danmaku, image
         :return:
         """
-        pass
+        time_to: str = datetime.today().strftime('%Y%m%d')
+        time_from: str = (datetime.today() + timedelta(days=-7)).strftime('%Y%m%d')
+        for cate_id in [28, 29, 30, 31, 59, 193, 194]:  # 7 main category in music
+            # 28: original, 29: live, 30: vocaloid, 31: cover, 59: perform, 192: mv, 194: electronic
+            for page in range(1, 51):  # 20 * 50 = 1000 videos per category
+                r_popular = requests.get(cls.url_popular, params={
+                    'main_ver': 'v3', 'search_type': 'video', 'view_type': 'hot_rank', 'order': 'click',
+                    'copy_right': -1, 'cate_id': cate_id, 'page': page, 'pagesize': 20,
+                    'time_from': time_from, 'time_to': time_to,
+                })
+                if r_popular.status_code == 200:
+                    j_popular = r_popular.json()
+                    if j_popular['code']:
+                        logging.warning('Failed to fetch video list of category %d, page %d, got err msg: %s.'
+                                        % (cate_id, page, j_popular['msg']))
+                    else:  # code 0 success
+                        logging.info('Fetched page %d of category %d.' % (page, cate_id))
+                        cls.bvid_list += [video['bvid'] for video in j_popular['result']]
+                else:  # error status code
+                    logging.warning('Failed to request video list of category %d, page %d, got status code: %d'
+                                    % (cate_id, page, r_popular.status_code))
+        return
 
     def get_pagelist(self) -> 'BiliCrawler':
         """
@@ -84,6 +106,9 @@ class BiliCrawler(object):
             logging.warning('Failed to request detail of %s, got status code: %d.' % (self.bvid, r_detail.status_code))
         return self
 
+    def get_up(self):
+        pass
+
     def save_to_db(self) -> None:
         """
         save crawled data to database
@@ -110,7 +135,5 @@ class BiliCrawler(object):
 
 
 if __name__ == '__main__':
-    v = BiliCrawler()
-    v.bvid = 'BV1Kh411W7Yp'
-    v.get_pagelist().get_details().save_to_db()
+    BiliCrawler.get_popular()
     pass
