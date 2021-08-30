@@ -9,7 +9,7 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 ### Web Crawling
 
 - [ ] video list
-- [ ] video detail
+- [x] video detail - 2021/08/30
 - [ ] massive data
 
 ### Web Framework
