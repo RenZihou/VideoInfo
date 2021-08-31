@@ -21,10 +21,7 @@ from crawler.database import BiliDB
 
 logging.basicConfig(filename=path.join(path.dirname(__file__), '../log/bili_crawler.log'), filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
-                    datefmt='%H:%M:%S', level=logging.DEBUG)
-# do not log INFO and DEBUG level logs
-logging.disable(logging.INFO)
-logging.disable(logging.DEBUG)
+                    datefmt='%H:%M:%S', level=logging.WARNING)
 
 
 class BiliCrawler(object):
@@ -57,13 +54,8 @@ class BiliCrawler(object):
         print('Crawling popular video list...')
         cls.__get_popular(size=size)
         print('Crawling video details...')
-        for bvid in tqdm(cls.bvid_list):
-            sleep(random())
-            try:
-                BiliCrawler(bvid=bvid).crawl()
-            except IndexError:
-                logging.warning('Skipped crawling %s: timeout.' % bvid)
-                continue
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            list(tqdm(executor.map(cls.crawl, map(BiliCrawler, cls.bvid_list)), total=len(cls.bvid_list)))
         print('Crawling done.')
         return
 
@@ -102,6 +94,7 @@ class BiliCrawler(object):
         crawl all data (of a video) needed
         :return: None
         """
+        sleep(random())
         if not self.bvid:
             logging.fatal('Calling to crawl before bvid set.')
             return
