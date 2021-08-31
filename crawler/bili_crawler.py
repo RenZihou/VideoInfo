@@ -6,7 +6,9 @@ maintain the crawler
 this crawler call api to get the data
 """
 
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
+from os import path
 from random import random
 from time import sleep
 from typing import List
@@ -17,10 +19,12 @@ from tqdm import tqdm
 
 from crawler.database import BiliDB
 
-logging.basicConfig(filename='../log/bili_crawler.log', filemode='a',
+logging.basicConfig(filename=path.join(path.dirname(__file__), '../log/bili_crawler.log'), filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S', level=logging.DEBUG)
-logging.disable(logging.INFO)  # do not log INFO level logs
+# do not log INFO and DEBUG level logs
+logging.disable(logging.INFO)
+logging.disable(logging.DEBUG)
 
 
 class BiliCrawler(object):
@@ -51,16 +55,20 @@ class BiliCrawler(object):
         :return: None
         """
         print('Crawling popular video list...')
-        cls.get_popular(size=size)
+        cls.__get_popular(size=size)
         print('Crawling video details...')
         for bvid in tqdm(cls.bvid_list):
             sleep(random())
-            BiliCrawler(bvid=bvid).crawl()
+            try:
+                BiliCrawler(bvid=bvid).crawl()
+            except IndexError:
+                logging.warning('Skipped crawling %s: timeout.' % bvid)
+                continue
         print('Crawling done.')
         return
 
     @classmethod
-    def get_popular(cls, size: int = 50) -> None:
+    def __get_popular(cls, size: int = 50) -> None:
         """
         get popular video list: video url, title, up, play, danmaku, image
         :param size: number of pages-to-crawl in each category.
@@ -75,7 +83,7 @@ class BiliCrawler(object):
                     'main_ver': 'v3', 'search_type': 'video', 'view_type': 'hot_rank', 'order': 'click',
                     'copy_right': -1, 'cate_id': cate_id, 'page': page, 'pagesize': 20,
                     'time_from': time_from, 'time_to': time_to,
-                })
+                }, headers=cls.headers)
                 if r_popular.status_code == 200:
                     j_popular = r_popular.json()
                     if j_popular['code']:
@@ -99,19 +107,19 @@ class BiliCrawler(object):
             return
         with BiliDB() as db:
             if list(db.execute('SELECT * FROM videos WHERE bvid = ?', (self.bvid,))):
-                logging.info('Skipped video detail of %s: already exist.' % self.bvid)
+                logging.warning('Skipped video detail of %s: already exist.' % self.bvid)
                 return
-        self.get_pagelist().get_detail().save_detail()
-        self.get_comment().save_comment()
+        self.__get_pagelist().__get_detail().__save_detail()
+        self.__get_comment().__save_comment()
         mid = int(self.detail['owner']['mid'])
         with BiliDB() as db:
             if list(db.execute('SELECT * FROM ups WHERE uid = ?', (mid,))):
                 logging.info('Skipped up info of %d: already exist.' % mid)
                 return
-        self.get_up().save_up()
+        self.__get_up().__save_up()
         return
 
-    def get_pagelist(self) -> 'BiliCrawler':
+    def __get_pagelist(self) -> 'BiliCrawler':
         """
         get video pagelist
         :return: self
@@ -131,7 +139,7 @@ class BiliCrawler(object):
             logging.warning('Failed to request pagelist of %s, got status code: %d.' % (self.bvid, r_cid.status_code))
         return self
 
-    def get_detail(self) -> 'BiliCrawler':
+    def __get_detail(self) -> 'BiliCrawler':
         """
         get video details: description, like, coin, star, comments(5)
         :return: self
@@ -153,7 +161,7 @@ class BiliCrawler(object):
             logging.warning('Failed to request detail of %s, got status code: %d.' % (self.bvid, r_detail.status_code))
         return self
 
-    def get_comment(self) -> 'BiliCrawler':
+    def __get_comment(self) -> 'BiliCrawler':
         """
         get video comments (up to 5)
         :return: self
@@ -176,7 +184,7 @@ class BiliCrawler(object):
                             % (self.bvid, r_comment.status_code))
         return self
 
-    def get_up(self) -> 'BiliCrawler':
+    def __get_up(self) -> 'BiliCrawler':
         """
         get up details: name, uid, intro, avatar, fans
         :return: self
@@ -197,7 +205,7 @@ class BiliCrawler(object):
             logging.warning('Failed to request up info of %d, got status code: %d.' % (mid, r_up.status_code))
         return self
 
-    def save_detail(self) -> None:
+    def __save_detail(self) -> None:
         """
         save crawled video detail into database
         :return: None
@@ -209,14 +217,14 @@ class BiliCrawler(object):
             cmd = '''INSERT INTO videos 
                      (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid, avid)
                      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
-            db.execute(cmd, (self.bvid, self.detail['title'], self.detail['desc'], self.get_video_url(),
+            db.execute(cmd, (self.bvid, self.detail['title'], self.detail['desc'], self.__get_video_url(),
                              self.detail['pic'], self.detail['stat']['view'], self.detail['stat']['danmaku'],
                              self.detail['stat']['like'], self.detail['stat']['coin'], self.detail['stat']['favorite'],
                              self.detail['owner']['mid'], self.detail['aid']))
             logging.info('Saved detail of %s into database.' % self.bvid)
         return
 
-    def save_comment(self) -> None:
+    def __save_comment(self) -> None:
         """
         save crawled comment to database
         :return: None
@@ -231,7 +239,7 @@ class BiliCrawler(object):
             logging.info('Saved comment of %s into database.' % self.bvid)
         return
 
-    def save_up(self) -> None:
+    def __save_up(self) -> None:
         """
         save crawled up info to database
         :return: None
@@ -246,7 +254,7 @@ class BiliCrawler(object):
             logging.info('Saved up info of %s into database.' % self.up['mid'])
         return
 
-    def get_video_url(self) -> str:
+    def __get_video_url(self) -> str:
         """
         generate video url based on bvid
         :return: video url

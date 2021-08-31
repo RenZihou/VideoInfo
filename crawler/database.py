@@ -6,6 +6,7 @@ provide access to database and several functions
 """
 
 import sqlite3
+from os import path
 
 
 class BiliDB(object):
@@ -13,7 +14,7 @@ class BiliDB(object):
     connect to the database
     """
     def __init__(self):
-        self.conn = sqlite3.connect('../data/data.sqlite')
+        self.conn = sqlite3.connect(path.join(path.dirname(__file__), '../data/data.sqlite'))
         self.cur = self.conn.cursor()
 
     def __enter__(self):
