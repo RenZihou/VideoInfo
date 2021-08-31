@@ -3,6 +3,7 @@
 
 """
 maintain the crawler
+this crawler call api to get the data
 """
 
 from datetime import datetime, timedelta
@@ -19,6 +20,7 @@ from crawler.database import BiliDB
 logging.basicConfig(filename='../log/bili_crawler.log', filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
                     datefmt='%H:%M:%S', level=logging.DEBUG)
+logging.disable(logging.INFO)  # do not log INFO level logs
 
 
 class BiliCrawler(object):
@@ -29,6 +31,7 @@ class BiliCrawler(object):
                              'Chrome/92.0.4515.159 Safari/537.36'}
     api_cid = 'https://api.bilibili.com/x/player/pagelist'
     api_detail = 'https://api.bilibili.com/x/web-interface/view'
+    api_comment = 'https://api.bilibili.com/x/v2/reply'
     api_up = 'https://api.bilibili.com/x/web-interface/card'
     url_popular = 'https://s.search.bilibili.com/cate/search'
     bvid_list: List[str] = []
@@ -37,12 +40,14 @@ class BiliCrawler(object):
         self.bvid: str = bvid
         self.cid: List[str] = []
         self.detail: dict = {}
+        self.comment: List[str] = []
         self.up: dict = {}
 
     @classmethod
     def crawl_all(cls, size: int = 50) -> None:
         """
         crawl all data of videos in `bvid_list`
+        :param size: number of pages-to-crawl in each category.
         :return: None
         """
         print('Crawling popular video list...')
@@ -52,16 +57,18 @@ class BiliCrawler(object):
             sleep(random())
             BiliCrawler(bvid=bvid).crawl()
         print('Crawling done.')
+        return
 
     @classmethod
-    def get_popular(cls, size: int = 50):
+    def get_popular(cls, size: int = 50) -> None:
         """
         get popular video list: video url, title, up, play, danmaku, image
-        :return:
+        :param size: number of pages-to-crawl in each category.
+        :return: None
         """
         time_to: str = datetime.today().strftime('%Y%m%d')
         time_from: str = (datetime.today() + timedelta(days=-7)).strftime('%Y%m%d')
-        for cate_id in [28, 29, 30, 31, 59, 193, 194]:  # 7 main category in music
+        for cate_id in (28, 29, 30, 31, 59, 193, 194):  # 7 main category in music
             # 28: original, 29: live, 30: vocaloid, 31: cover, 59: perform, 192: mv, 194: electronic
             for page in range(1, size + 1):  # 20 * 50 = 1000 videos per category
                 r_popular = requests.get(cls.url_popular, params={
@@ -94,7 +101,8 @@ class BiliCrawler(object):
             if list(db.execute('SELECT * FROM videos WHERE bvid = ?', (self.bvid,))):
                 logging.info('Skipped video detail of %s: already exist.' % self.bvid)
                 return
-        self.get_pagelist().get_details().save_detail()
+        self.get_pagelist().get_detail().save_detail()
+        self.get_comment().save_comment()
         mid = int(self.detail['owner']['mid'])
         with BiliDB() as db:
             if list(db.execute('SELECT * FROM ups WHERE uid = ?', (mid,))):
@@ -123,7 +131,7 @@ class BiliCrawler(object):
             logging.warning('Failed to request pagelist of %s, got status code: %d.' % (self.bvid, r_cid.status_code))
         return self
 
-    def get_details(self) -> 'BiliCrawler':
+    def get_detail(self) -> 'BiliCrawler':
         """
         get video details: description, like, coin, star, comments(5)
         :return: self
@@ -145,12 +153,35 @@ class BiliCrawler(object):
             logging.warning('Failed to request detail of %s, got status code: %d.' % (self.bvid, r_detail.status_code))
         return self
 
+    def get_comment(self) -> 'BiliCrawler':
+        """
+        get video comments (up to 5)
+        :return: self
+        """
+        if not self.detail:  # no video detail (video avid) yet
+            logging.fatal('Calling to get_comment before details crawled.')
+            return self
+        avid = self.detail['aid']
+        r_comment = requests.get(self.api_comment, params={'type': 1, 'oid': avid, 'sort': 1, 'nohot': 1})
+        # type = 1: video comment, sort = 1: sort by like number, nohot = 1: do not show hot comments
+        if r_comment.status_code == 200:
+            j_comment = r_comment.json()
+            if j_comment['code']:  # code -400 request error, code -404 not found, code 12002 comment disabled
+                logging.warning('Failed to fetch comment of %s, got err msg: %s.' % (self.bvid, j_comment['message']))
+            else:  # code 0 success
+                self.comment = list(map(lambda x: x['content']['message'], j_comment['data']['replies'][:5]))
+                logging.info('Fetched comment of %s.' % self.bvid)
+        else:  # error status code
+            logging.warning('Failed to request comment of %s, got status code: %d.'
+                            % (self.bvid, r_comment.status_code))
+        return self
+
     def get_up(self) -> 'BiliCrawler':
         """
         get up details: name, uid, intro, avatar, fans
         :return: self
         """
-        if not self.detail:
+        if not self.detail:  # no video detail (up mid) yet
             logging.fatal('Calling to get_up before details crawled.')
             return self
         mid = int(self.detail['owner']['mid'])
@@ -158,8 +189,8 @@ class BiliCrawler(object):
         if r_up.status_code == 200:
             j_up = r_up.json()
             if j_up['code']:  # code -400 request error
-                logging.warning('Failed to fetch up info of %d, got msg err: %s.' % (mid, j_up['message']))
-            else:
+                logging.warning('Failed to fetch up info of %d, got err msg: %s.' % (mid, j_up['message']))
+            else:  # code 0 success
                 logging.info('Fetched up info of %d.' % mid)
                 self.up = j_up['data']['card']
         else:  # error status code
@@ -175,13 +206,30 @@ class BiliCrawler(object):
             logging.fatal('Calling to save_detail before details crawled.')
             return
         with BiliDB() as db:
-            cmd = '''INSERT INTO videos (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+            cmd = '''INSERT INTO videos 
+                     (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid, avid)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.bvid, self.detail['title'], self.detail['desc'], self.get_video_url(),
                              self.detail['pic'], self.detail['stat']['view'], self.detail['stat']['danmaku'],
                              self.detail['stat']['like'], self.detail['stat']['coin'], self.detail['stat']['favorite'],
-                             self.detail['owner']['mid']))
-            logging.info('Saved detail of %s into database' % self.bvid)
+                             self.detail['owner']['mid'], self.detail['aid']))
+            logging.info('Saved detail of %s into database.' % self.bvid)
+        return
+
+    def save_comment(self) -> None:
+        """
+        save crawled comment to database
+        :return: None
+        """
+        if not self.comment:  # no comment yet
+            logging.fatal('Calling to save_comment before comment crawled.')
+            return
+        with BiliDB() as db:
+            cmd = '''INSERT INTO comments (bvid, comment_1, comment_2, comment_3, comment_4, comment_5)
+                     VALUES (?, ?, ?, ?, ?, ?)'''
+            db.execute(cmd, (self.bvid, *self.comment))
+            logging.info('Saved comment of %s into database.' % self.bvid)
+        return
 
     def save_up(self) -> None:
         """
@@ -189,13 +237,14 @@ class BiliCrawler(object):
         :return: None
         """
         if not self.up:  # no up info yet
-            logging.fatal('Calling to save_up before up info crawled')
+            logging.fatal('Calling to save_up before up info crawled.')
             return
         with BiliDB() as db:
             cmd = '''INSERT INTO ups (uid, name, introduction, avatar, fans)
                      VALUES (?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.up['mid'], self.up['name'], self.up['sign'], self.up['face'], self.up['fans']))
-            logging.info('Saved up info of %s into database' % self.up['mid'])
+            logging.info('Saved up info of %s into database.' % self.up['mid'])
+        return
 
     def get_video_url(self) -> str:
         """

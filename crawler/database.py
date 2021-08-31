@@ -32,7 +32,7 @@ def create_database() -> None:
     """
     with BiliDB() as db:
         db.execute('''CREATE TABLE IF NOT EXISTS videos
-                   (bvid         TEXT     NOT NULL,
+                   (bvid        TEXT     NOT NULL,
                    title        TEXT     NOT NULL,
                    description  TEXT     NOT NULL,
                    url          TEXT     NOT NULL,
@@ -42,13 +42,21 @@ def create_database() -> None:
                    like         INTEGER  NOT NULL,
                    coin         INTEGER  NOT NULL, 
                    collect      INTEGER  NOT NULL,
-                   up_uid       INTEGER  NOT NULL)''')
+                   up_uid       INTEGER  NOT NULL,
+                   avid         INTEGER  NOT NULL)''')
         db.execute('''CREATE TABLE IF NOT EXISTS ups
-        (uid          INTEGER  NOT NULL,
-        name          TEXT     NOT NULL,
-        introduction  TEXT     NOT NULL,
-        avatar        TEXT     NOT NULL,
-        fans          INTEGER  NOT NULL)''')
+                      (uid          INTEGER  NOT NULL,
+                      name          TEXT     NOT NULL,
+                      introduction  TEXT     NOT NULL,
+                      avatar        TEXT     NOT NULL,
+                      fans          INTEGER  NOT NULL)''')
+        db.execute('''CREATE TABLE IF NOT EXISTS comments
+                      (bvid      TEXT  NOT NULL,
+                      comment_1  TEXT  NOT NULL,
+                      comment_2  TEXT  NOT NULL,
+                      comment_3  TEXT  NOT NULL,
+                      comment_4  TEXT  NOT NULL,
+                      comment_5  TEXT  NOT NULL)''')
     return
 
 
