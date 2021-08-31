@@ -10,6 +10,7 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 
 - [x] video list
 - [x] video detail - 2021/08/30
+- [ ] download image
 - [ ] massive data
 
 ### Web Framework
