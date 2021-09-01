@@ -70,4 +70,12 @@
             </li>
         {% endif %}
     </ul>
+    <div class="jump-pager">
+
+        <span>跳至</span>
+        <form action="/video/index" method="get" style="margin:0; display:inline;">
+            <input type="text" min="1" max="{{ total_page }}" name="jump_to">
+        </form>
+        <span>页</span>
+    </div>
 {% endblock %}

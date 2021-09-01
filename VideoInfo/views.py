@@ -14,12 +14,23 @@ def video_index(request, page: int = 1):
     response to video/index/
     :return:
     """
-    # return HttpResponse('hello world. video list here.')
-    start = (page - 1) * 20 + 1
-    end = page * 20 + 1
+    # handle jump-to
+    jump_to = request.GET.get('jump_to', -1)
+    if jump_to != -1:
+        try:
+            page = int(jump_to)
+        except ValueError:
+            page = 1
+
+    # handle normal page
     keys = ('avid', 'bvid', 'title', 'description', 'url', 'pic', 'play', 'danmaku',
             'like', 'coin', 'collect', 'up_uid')
     with BiliDB() as db:
+        page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0] / 20)
+        if not 1 <= page <= page_total:
+            page = 1
+        start = (page - 1) * 20 + 1
+        end = page * 20 + 1
         video_list = list(map(
             lambda v: dict(zip(keys, v)),
             db.execute('''SELECT avid, bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid
@@ -32,7 +43,6 @@ def video_index(request, page: int = 1):
                 name = '<unknown>'
             video['up_space'] = 'https://space.bilibili.com/%d' % up_uid
             video['up_name'] = name
-        page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0] / 20)
     page_start = max(2, page - 3)
     page_end = min(page_total - 1, page + 3)
     page_list = list(range(page_start, page_end + 1))
@@ -41,7 +51,7 @@ def video_index(request, page: int = 1):
     page_prev = page - 1 if page != 1 else -1
     page_next = page + 1 if page != page_total else -1
     return render(request=request, template_name='video_index.html',
-                  context={'video_list': video_list, 'page_list': page_list,
+                  context={'video_list': video_list, 'page_list': page_list, 'total_page': page_total,
                            'current_page': page, 'next_page': page_next, 'prev_page': page_prev})
 
 
