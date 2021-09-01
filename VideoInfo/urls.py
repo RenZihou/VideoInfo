@@ -23,4 +23,6 @@ urlpatterns = [
     path('', views.video_index, name='video_index'),
     path('video/index/', views.video_index, name='video_index'),
     path('video/index/<int:page>', views.video_index, name='video_index'),
+    path('author/index/', views.author_index, name='author_index'),
+    path('author/index/<int:page>', views.author_index, name='author_index'),
 ]

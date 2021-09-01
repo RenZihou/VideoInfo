@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block body %}
+
+    <ul class="user-list clearfix">
+        {% for author in author_list %}
+            <li class="user-item matrix">
+            <div class="up-face">
+                <a href="https://space.bilibili.com/{{ author.uid }}" title="{{ author.name }}" class="face-img">
+                    <div class="lazy-img">
+                        <img alt src="/static/avatar/{{ author.uid }}.jpg">
+                    </div>
+                </a>
+            </div>
+            <div class="info-wrap">
+                <div class="headline">
+                    <a href="https://space.bilibili.com/{{ author.uid }}" title="{{ author.name }}" class="title">
+                        {{ author.name }}</a>
+                </div>
+                <div class="up-info clearfix">
+                    <span>粉丝：{{ author.fans }}</span>
+                </div>
+                <div class="desc">
+                    {{ author.introduction }}
+                </div>
+            </div>
+        {% endfor %}
+    </ul>
+
+{% endblock %}
+
+{% block page %}
+    <ul class="pages">
+        {% if prev_page != -1 %}
+            <li class="page-item next">
+                <a href="/author/index/{{ prev_page }}">
+                    <button class="nav-btn iconfont icon-arrowdown3">上一页</button>
+                </a>
+            </li>
+        {% endif %}
+        {% for page in page_list %}
+            {% if page == -1 %}
+                <strong>...</strong>
+            {% else %}
+                <li class="page-item {% if page == current_page %}active{% endif %}">
+                    <a href="/author/index/{{ page }}">
+                        <button class="pagination-btn num-btn">{{ page }}</button>
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        {% if next_page != -1 %}
+            <li class="page-item next">
+                <a href="/author/index/{{ next_page }}">
+                    <button class="nav-btn iconfont icon-arrowdown3">下一页</button>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
+    <div class="jump-pager">
+
+        <span>跳至</span>
+        <form action="/author/index" method="get" style="margin:0; display:inline;">
+            <input type="text" min="1" max="{{ total_page }}" name="jump_to">
+        </form>
+        <span>页</span>
+    </div>
+{% endblock %}

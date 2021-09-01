@@ -36,8 +36,8 @@ You can visit your web page in browser through `127.0.0.1:8000`
 
 ### Web Framework
 
-- [ ] framework
-- [ ] list page
+- [x] framework - 2021/09/01
+- [x] list page - 2021/09/01
 - [ ] detail page
 - [ ] author page
 - [ ] search page

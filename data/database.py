@@ -46,7 +46,7 @@ def create_database() -> None:
                    up_uid       INTEGER  NOT NULL,
                    avid         INTEGER  NOT NULL)''')
         db.execute('''CREATE TABLE IF NOT EXISTS ups
-                      (uid          INTEGER  PRIMARY KEY,
+                      (uid          TEXT  PRIMARY KEY,
                       name          TEXT     NOT NULL,
                       introduction  TEXT     NOT NULL,
                       avatar        TEXT     NOT NULL,
