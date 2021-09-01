@@ -6,9 +6,10 @@ maintain the crawler
 this crawler call api to get the data
 """
 
+from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timedelta
-from os import path, listdir
+from os import path
 from random import random
 from time import sleep
 from typing import List
@@ -40,7 +41,7 @@ class BiliCrawler(object):
     def __init__(self, bvid: str = ''):
         self.bvid: str = bvid
         self.cid: List[str] = []
-        self.detail: dict = {}
+        self.detail: 'defaultdict' = defaultdict(dict)
         self.comment: List[str] = []
         self.up: dict = {}
 
@@ -79,9 +80,10 @@ class BiliCrawler(object):
         with BiliDB() as db:
             # fix video cover
             print('Fixing missing video covers...')
-            videos = db.execute('SELECT bvid, pic FROM videos')
-            for bvid, pic in videos:
-                c = BiliCrawler(bvid=bvid)
+            videos = db.execute('SELECT avid, pic FROM videos')
+            for avid, pic in videos:
+                c = BiliCrawler()
+                c.detail['aid'] = avid
                 c.detail['pic'] = pic
                 c.__download_cover()
             # fix up avatar
@@ -246,18 +248,18 @@ class BiliCrawler(object):
         download video cover
         :return: None
         """
-        # TODO: use aid
-        if not self.detail:
+        # bvid is case-sensitive while path (in Windows) is not. So avid is used here.
+        if not self.detail:  # no video detail (aid, pic)
             logging.fatal('Calling to download_cover before detail crawled.')
             return self
         url_cover = self.detail['pic']
-        filename_cover = path.join(path.dirname(__file__), '../data/cover/%s.jpg' % self.bvid)
+        filename_cover = path.join(path.dirname(__file__), '../data/cover/%d.jpg' % self.detail['aid'])
         if path.exists(filename_cover):
-            logging.warning('Skipped cover of %s: already exists.' % self.bvid)
+            logging.info('Skipped cover of %d: already exists.' % self.detail['aid'])
         else:
             with open(filename_cover, 'wb') as f:
                 f.write(requests.get(url_cover, headers=self.headers).content)
-            logging.info('Downloaded cover of %s.' % self.bvid)
+            logging.info('Downloaded cover of %d.' % self.detail['aid'])
         return self
 
     def __download_avatar(self) -> 'BiliCrawler':
@@ -271,7 +273,7 @@ class BiliCrawler(object):
         url_avatar = self.up['face']
         filename_avatar = path.join(path.dirname(__file__), '../data/avatar/%s.jpg' % self.up['mid'])
         if path.exists(filename_avatar):
-            logging.warning('Skipped avatar of %s: already exists.' % self.up['mid'])
+            logging.info('Skipped avatar of %s: already exists.' % self.up['mid'])
         else:
             with open(filename_avatar, 'wb') as f:
                 f.write(requests.get(url_avatar, headers=self.headers).content)
@@ -337,6 +339,6 @@ class BiliCrawler(object):
 
 
 if __name__ == '__main__':
-    # BiliCrawler.crawl_all(size=50, start='BV143411B7Ap')
-    BiliCrawler.fix_image()
+    BiliCrawler.crawl_all(size=50, start='BV1Cv411N7pg')
+    # BiliCrawler.fix_image()
     pass

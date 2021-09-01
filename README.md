@@ -8,10 +8,10 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 
 ### Web Crawling
 
-- [x] video list
+- [x] video list - 2021/08/30
 - [x] video detail - 2021/08/30
-- [ ] download image
-- [ ] massive data
+- [x] download image - 2021/08/31
+- [x] massive data - 2021/09/01
 
 ### Web Framework
 
