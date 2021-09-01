@@ -18,7 +18,7 @@ import logging
 import requests
 from tqdm import tqdm
 
-from crawler.database import BiliDB
+from data.database import BiliDB
 
 logging.basicConfig(filename=path.join(path.dirname(__file__), '../log/bili_crawler.log'), filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',

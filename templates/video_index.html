@@ -3,36 +3,71 @@
 {% block body %}
 
     <ul class="video-list clearfix">
-        <li class="video-item matrix">
-            <a href="https://www.bilibili.com/video/BV16o4y1S7ny?from=search&amp;seid=8558039648996773961"
-               title="搬运：换弹测试2（Reload Practice Test - 2）" target="_blank" class="img-anchor">
-                <div class="img">
-                    <div class="lazy-img">
-                        <img alt="" src="/static/cover/207390880.jpg"></div>
-                    <span class="so-imgTag_rb">00:28</span>
-                    <span class="mask-video"></span>
-                </div>
-            </a>
-            <div class="info">
-                <div class="headline clearfix">
-                    <a title="搬运：换弹测试2（Reload Practice Test - 2）"
-                       href="https://www.bilibili.com/video/BV16o4y1S7ny?from=search&amp;seid=8558039648996773961"
-                       target="_blank" class="title">搬运：换弹测试2（Reload Practice
-                        <em class="keyword">Test</em>- 2）</a></div>
-                <div class="tags">
-                <span title="观看" class="so-icon watch-num">
-                  <i class="icon-playtime"></i>12.3万</span>
-                    <span title="弹幕" class="so-icon hide">
-                  <i class="icon-subtitle"></i>48</span>
-                    <span title="上传时间" class="so-icon time">
-                  <i class="icon-date"></i>2021-08-01</span>
-                    <span title="up主" class="so-icon">
+        {% for video in video_list %}
+            <li class="video-item matrix">
+                <a href="{{ video.url }}"
+                   title="{{ video.title }}" target="_blank" class="img-anchor">
+                    <div class="img">
+                        <div class="lazy-img">
+                            <img alt="" src="/static/cover/{{ video.avid }}.jpg"></div>
+                        {#                    <span class="so-imgTag_rb">00:28</span>#}
+                        <span class="mask-video"></span>
+                    </div>
+                </a>
+                <div class="info">
+                    <div class="headline clearfix">
+                        <a title="{{ video.title }}"
+                           href="{{ video.url }}"
+                           target="_blank" class="title">{{ video.title }}
+                        </a></div>
+                    <div class="tags">
+                        <span title="观看" class="so-icon watch-num">
+                  <i class="icon-playtime"></i>{{ video.play }}
+                </span>
+                        <span title="弹幕" class="so-icon">
+                  <i class="icon-subtitle"></i>{{ video.danmaku }}
+                </span>
+                        {#                    <span title="上传时间" class="so-icon time">#}
+                        {#                  <i class="icon-date"></i>2021-08-01</span>#}
+                        <span title="up主" class="so-icon">
                   <i class="icon-uper"></i>
-                  <a href="https://space.bilibili.com/730286?from=search&amp;seid=8558039648996773961" target="_blank"
-                     class="up-name">绿皮僵尸</a></span>
+                  <a href="{{ video.up_space }}" target="_blank"
+                     class="up-name">{{ video.up_name }}</a>
+               </span>
+                    </div>
                 </div>
-            </div>
-        </li> <!--repeat-->
+            </li> <!--repeat-->
+        {% endfor %}
     </ul>
 
+{% endblock %}
+
+{% block page %}
+    <ul class="pages">
+        {% if prev_page != -1 %}
+            <li class="page-item next">
+                <a href="/video/index/{{ prev_page }}">
+                    <button class="nav-btn iconfont icon-arrowdown3">上一页</button>
+                </a>
+            </li>
+        {% endif %}
+        {% for page in page_list %}
+            {% if page == -1 %}
+                <strong>...</strong>
+            {% else %}
+                <li class="page-item {% if page == current_page %}active{% endif %}">
+                    <a href="/video/index/{{ page }}">
+                        <button class="pagination-btn num-btn">{{ page }}</button>
+                    </a>
+                </li>
+            {% endif %}
+        {% endfor %}
+        {% if next_page != -1 %}
+            <li class="page-item next">
+                <a href="/video/index/{{ next_page }}">
+                    <button class="nav-btn iconfont icon-arrowdown3">下一页</button>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
 {% endblock %}

@@ -22,4 +22,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.video_index, name='video_index'),
     path('video/index/', views.video_index, name='video_index'),
+    path('video/index/<int:page>', views.video_index, name='video_index'),
 ]

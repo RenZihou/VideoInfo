@@ -17,7 +17,7 @@ import logging
 from requests_html import HTMLSession  # used to render html
 from tqdm import tqdm
 
-from database import BiliDB
+from data.database import BiliDB
 
 logging.basicConfig(filename=path.join(path.dirname(__file__), '../log/bili_crawler_new.log'), filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
