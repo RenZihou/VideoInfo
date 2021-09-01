@@ -16,6 +16,10 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from VideoInfo import views
+
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', views.video_index, name='video_index'),
+    path('video/index/', views.video_index, name='video_index'),
 ]

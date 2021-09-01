@@ -157,6 +157,7 @@ class BiliCrawler(object):
         get up details: name, uid, intro, avatar, fans
         :return: self
         """
+        # TODO: get up info from video page
         if not self.detail:
             logging.fatal('Calling to get_up before details crawled.')
             return self
