@@ -23,8 +23,10 @@ urlpatterns = [
     path('', views.video_index, name='video_index'),
     path('video/index/', views.video_index, name='video_index'),
     path('video/index/<int:page>', views.video_index, name='video_index'),
+    path('video/index/search/<str:search>', views.video_search, name='video_search'),
     path('author/index/', views.author_index, name='author_index'),
     path('author/index/<int:page>', views.author_index, name='author_index'),
+    path('author/index/search/<str:search>', views.author_search, name='author_search'),
     path('video/detail/<str:bvid>', views.video_detail, name='video_detail'),
     path('author/detail/<str:uid>', views.author_detail, name='author_detail'),
 ]

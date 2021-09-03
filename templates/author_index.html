@@ -1,8 +1,39 @@
 {% extends 'base.html' %}
 
+{% block search %}
+
+    <div class="logo-input clearfix" style="display:flex">
+        <ul class="v-switcher-header v-switcher-header-around v-switcher-header-translate">
+            <li class="v-switcher-header-item" style="height:48px;line-height:48px;width:50%;">
+                <a href="/video/index/" style="color:#99a2aa">视频</a>
+            </li>
+            <li class="v-switcher-header-item is-active" style="height:48px;line-height:48px;width:50%;">
+                <a href="/author/index/" class="router-link-exact-active router-link-active">作者</a>
+            </li>
+        </ul>
+        <div class="search-block">
+            <form action="/author/index/" method="get" style="margin: 0; display: inline">
+                <div class="input-wrap">
+                    <input id="search-keyword" type="text" maxlength="100" autocomplete="off" name="search"
+                           value="{{ search_keyword }}">
+                </div>
+                <button class="search-button">
+                    <i class="icon-search-white"></i>
+                    <span class="search-text">搜索</span>
+                </button>
+            </form>
+            <div class="search-loupe">
+                <i class="icon-loupe"></i>
+            </div>
+            <div><span>搜索用时：{{ time_ms }}</span></div>
+        </div>
+    </div>
+
+{% endblock %}
+
 {% block body %}
 
-    <ul class="user-list clearfix">
+    <ul class="user-list clearfix" style="margin-top: 30px">
         {% for author in author_list %}
             <li class="user-item matrix">
             <div class="up-face">
@@ -33,7 +64,7 @@
     <ul class="pages">
         {% if prev_page != -1 %}
             <li class="page-item next">
-                <a href="/author/index/{{ prev_page }}">
+                <a href="/author/index/{{ prev_page }}{% if search_keyword != '' %}?search={{ search_keyword }}{% endif %}">
                     <button class="nav-btn iconfont icon-arrowdown3">上一页</button>
                 </a>
             </li>
@@ -43,7 +74,7 @@
                 <strong>...</strong>
             {% else %}
                 <li class="page-item {% if page == current_page %}active{% endif %}">
-                    <a href="/author/index/{{ page }}">
+                    <a href="/author/index/{{ page }}{% if search_keyword != '' %}?search={{ search_keyword }}{% endif %}">
                         <button class="pagination-btn num-btn">{{ page }}</button>
                     </a>
                 </li>
@@ -51,7 +82,7 @@
         {% endfor %}
         {% if next_page != -1 %}
             <li class="page-item next">
-                <a href="/author/index/{{ next_page }}">
+                <a href="/author/index/{{ next_page }}{% if search_keyword != '' %}?search={{ search_keyword }}{% endif %}">
                     <button class="nav-btn iconfont icon-arrowdown3">下一页</button>
                 </a>
             </li>
@@ -60,9 +91,10 @@
     <div class="jump-pager">
 
         <span>跳至</span>
-        <form action="/author/index" method="get" style="margin:0; display:inline;">
-            <input type="text" min="1" max="{{ total_page }}" name="jump_to">
+        <form action="/author/index{% if search_keyword != '' %}/search/{{ search_keyword }}{% endif %}" method="get" style="margin:0; display:inline;">
+            <input type="number" min="1" max="{{ total_page }}" name="jump_to">
         </form>
         <span>页</span>
     </div>
+
 {% endblock %}

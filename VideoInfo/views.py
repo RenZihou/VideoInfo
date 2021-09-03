@@ -2,8 +2,9 @@
 # @Author: RZH
 
 from math import ceil
+from time import time
 
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 from django.http import HttpResponse
 
 from data.database import BiliDB
@@ -22,19 +23,32 @@ def video_index(request, page: int = 1):
         except ValueError:
             page = 1
 
+    # handle search
+    search = request.GET.get('search', '')
+
     # handle normal page
+    t1 = time()
     with BiliDB() as db:
+        keys = ('avid', 'bvid', 'title', 'description', 'pic', 'play', 'danmaku',
+                'like', 'coin', 'collect', 'up_uid')
         page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0] / 20)
         if not 1 <= page <= page_total:
             page = 1
         start = (page - 1) * 20 + 1
         end = page * 20 + 1
-        keys = ('avid', 'bvid', 'title', 'description', 'pic', 'play', 'danmaku',
-                'like', 'coin', 'collect', 'up_uid')
-        video_list = list(map(
-            lambda v: dict(zip(keys, v)),
-            db.execute('''SELECT avid, bvid, title, description, pic, play, danmaku, like, coin, collect, up_uid
-                       FROM videos WHERE (? <= ROWID) AND (ROWID < ?)''', (start, end))))
+        if not search:
+            video_list = list(map(
+                lambda v: dict(zip(keys, v)),
+                db.execute('''SELECT avid, bvid, title, description, pic, play, danmaku, like, coin, collect, up_uid
+                              FROM videos WHERE (? <= ROWID) AND (ROWID < ?)''', (start, end,))))
+        else:
+            video_list = list(map(
+                lambda v: dict(zip(keys, v)),
+                db.execute('''SELECT avid, bvid, title, description, pic, play, danmaku, like, coin, collect, up_uid
+                              FROM videos WHERE title LIKE ?''', ('%%%s%%' % search,))))
+            page_total = ceil(len(video_list) / 20)
+            video_list = video_list[start:end]
+
         for video in video_list:
             up_uid = video['up_uid']
             try:
@@ -42,6 +56,8 @@ def video_index(request, page: int = 1):
             except IndexError:
                 name = '<unknown>'
             video['up_name'] = name
+    t2 = time()
+    # TODO: search result is empty
     page_start = max(2, page - 3)
     page_end = min(page_total - 1, page + 3)
     page_list = list(range(page_start, page_end + 1))
@@ -51,7 +67,8 @@ def video_index(request, page: int = 1):
     page_next = page + 1 if page != page_total else -1
     return render(request=request, template_name='video_index.html',
                   context={'video_list': video_list, 'page_list': page_list, 'total_page': page_total,
-                           'current_page': page, 'next_page': page_next, 'prev_page': page_prev})
+                           'current_page': page, 'next_page': page_next, 'prev_page': page_prev,
+                           'search_keyword': search, 'time_ms':  '%.1f ms' % ((t2 - t1) * 1000)})
 
 
 def author_index(request, page: int = 1):
@@ -69,18 +86,32 @@ def author_index(request, page: int = 1):
         except ValueError:
             page = 1
 
+    # handle search
+    search = request.GET.get('search', '')
+
     # handle normal page
+    t1 = time()
     with BiliDB() as db:
+        keys = ('uid', 'name', 'introduction', 'fans')
         page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM ups'))[0][0] / 10)
         if not 1 <= page <= page_total:
             page = 1
         start = (page - 1) * 10 + 1
         end = page * 10 + 1
-        keys = ('uid', 'name', 'introduction', 'fans')
-        author_list = list(map(
-            lambda v: dict(zip(keys, v)),
-            db.execute('''SELECT uid, name, introduction, fans
-                          FROM ups WHERE (? <= ROWID) AND (ROWID < ?)''', (start, end))))
+        if not search:
+            author_list = list(map(
+                lambda a: dict(zip(keys, a)),
+                db.execute('''SELECT uid, name, introduction, fans
+                              FROM ups WHERE (? <= ROWID) AND (ROWID < ?)''', (start, end,))))
+        else:
+            author_list = list(map(
+                lambda a: dict(zip(keys, a)),
+                db.execute('''SELECT uid, name, introduction, fans
+                              FROM ups WHERE (name LIKE ?)''', ('%%%s%%' % search,))
+            ))
+            page_total = ceil(len(author_list) / 20)
+            author_list = author_list[start:end]
+    t2 = time()
     page_start = max(2, page - 3)
     page_end = min(page_total - 1, page + 3)
     page_list = list(range(page_start, page_end + 1))
@@ -90,7 +121,8 @@ def author_index(request, page: int = 1):
     page_next = page + 1 if page != page_total else -1
     return render(request=request, template_name='author_index.html',
                   context={'author_list': author_list, 'page_list': page_list, 'total_page': page_total,
-                           'current_page': page, 'next_page': page_next, 'prev_page': page_prev})
+                           'current_page': page, 'next_page': page_next, 'prev_page': page_prev,
+                           'search_keyword': search, 'time_ms': '%.1f ms' % ((t2 - t1) * 1000)})
 
 
 def video_detail(request, bvid: str = ''):
@@ -146,6 +178,28 @@ def author_detail(request, uid: str = ''):
                                         FROM videos WHERE up_uid = ?''', (uid,))))
     return render(request=request, template_name='author_detail.html',
                   context={'author': author, 'video_list': video_list})
+
+
+def video_search(request, search: str = ''):
+    """
+
+    :param request:
+    :param search:
+    :return:
+    """
+    page = request.GET.get('jump_to', 1)
+    return redirect('/video/index/%s?search=%s' % (page, search))
+
+
+def author_search(request, search: str = ''):
+    """
+
+    :param request:
+    :param search:
+    :return:
+    """
+    page = request.GET.get('jump_to', 1)
+    return redirect('/author/index/%s?search=%s' % (page, search))
 
 
 if __name__ == '__main__':

@@ -25964,24 +25964,12 @@
         <div class="head-contain">
             <div class="search-wrap">
                 <div class="">
-                    <div class="logo-input clearfix">
-                        <span class="search-logo"></span>
-                        <div class="search-block">
-                            <div class="input-wrap">
-                                <input id="search-keyword" type="text" maxlength="100" autocomplete="off" value="test">
-                            </div>
-                            <div class="search-button">
-                                <i class="icon-search-white"></i>
-                                <span class="search-text">搜索</span></div>
-                            <div class="search-loupe">
-                                <i class="icon-loupe"></i>
-                            </div>
-                        </div>
-                    </div>
+                    {% block search %}
+                    {% endblock %}
                 </div>
             </div>
-
         </div>
+        
         <div class="body-contain">
             <div id="all-list">
                 <div class="flow-loader" style="position:relative;">
