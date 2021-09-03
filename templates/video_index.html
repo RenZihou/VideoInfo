@@ -5,7 +5,7 @@
     <ul class="video-list clearfix">
         {% for video in video_list %}
             <li class="video-item matrix">
-                <a href="{{ video.url }}"
+                <a href="/video/detail/{{ video.bvid }}"
                    title="{{ video.title }}" target="_blank" class="img-anchor">
                     <div class="img">
                         <div class="lazy-img">
@@ -17,7 +17,7 @@
                 <div class="info">
                     <div class="headline clearfix">
                         <a title="{{ video.title }}"
-                           href="{{ video.url }}"
+                           href="/video/detail/{{ video.bvid }}"
                            target="_blank" class="title">{{ video.title }}
                         </a></div>
                     <div class="tags">
@@ -31,7 +31,7 @@
                         {#                  <i class="icon-date"></i>2021-08-01</span>#}
                         <span title="up主" class="so-icon">
                   <i class="icon-uper"></i>
-                  <a href="{{ video.up_space }}" target="_blank"
+                  <a href="/author/detail/{{ video.up_uid }}" target="_blank"
                      class="up-name">{{ video.up_name }}</a>
                </span>
                     </div>

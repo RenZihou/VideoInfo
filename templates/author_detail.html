@@ -1,0 +1,70 @@
+{% extends 'author_detail_base.html' %}
+
+{% block body %}
+
+<div class="h">
+    <div class="wrapper">
+        <div class="h-inner" style="background-image: url(/static/author_bg.png);">
+            <div class="h-user">
+                <div class="h-info clearfix">
+                    <div class="h-avatar">
+                        <img src="/static/avatar/{{ author.uid }}.jpg" id="h-avatar">
+                    </div>
+                    <div class="h-basic">
+                        <div><span id="h-name">{{ author.name }}</span></div>
+                        <div class="h-basic-spacing">
+                            <h4 title="{{ author.introduction }}" class="h-sign">
+                                {{ author.introduction }}
+                            </h4>
+                        </div>
+                    </div>
+                    <div class="h-action">
+                        <a href="#" target="_blank" class="h-f-btn h-message">{{ author.fans }}<br/>粉丝</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="s-space">
+    <div id="page-video" class="wrapper">
+        <div class="col-full clearfix">
+            <div class="contribution-sidenav">
+                <div class="nav-container playlist-container">
+                    <div class="contribution-list-container">
+                        <ul class="contribution-list">
+                            <li class="contribution-item cur">
+                                <a href="#" class="text router-link-exact-active router-link-active">视频</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="main-content">
+                <div class="row page-head clearfix">
+                    <div class="page-head__left"><p class="item cur video-title">TA的视频</p></div>
+                </div>
+                <div id="submit-video" class="section video">
+                    <div id="video-list-style" class="cube">
+                        <div id="submit-video-list" class="content">
+                            <ul class="clearfix cube-list">
+                                {% for video in video_list %}
+                                <li data-aid="{{ video.bvid }}" class="small-item fakeDanmu-item">
+                                    <a href="/video/detail/{{ video.bvid }}" target="_blank" class="cover">
+                                        <img src="/static/cover/{{ video.avid }}.jpg" alt="{{ video.title }}">
+                                    </a>
+                                    <a href="/video/detail/{{ video.bvid }}" target="_blank" title="{{ video.title }}"
+                                       class="title">{{ video.title }}</a>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

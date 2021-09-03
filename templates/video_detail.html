@@ -1,0 +1,82 @@
+{% extends 'video_detail_base.html' %}
+
+{% block body %}
+
+    <div class="v-wrap"><!---->
+        <div class="l-con">
+            <iframe src="//player.bilibili.com/player.html?aid={{ video.avid }}&bvid={{ video.bvid }}&page=1"
+                    scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true"
+                    height="500"></iframe>
+            <div id="viewbox_report" class="video-info report-wrap-module report-scroll-module" scrollshow="true"><h1
+                    title="{{ video.title }}" class="video-title"><span class="title">{{ video.title }}</span>
+            </h1>
+                <div class="video-data">
+                    <span title="总播放数{{ video.play }}" class="view">{{ video.play }} 播放&nbsp;·&nbsp;</span>
+                    <span title="历史累计弹幕数{{ video.danmaku }}" class="view">{{ video.danmaku }} 弹幕&nbsp;·&nbsp;</span>
+                    <span title="总投币数{{ video.coin }}" class="view">{{ video.coin }} 硬币&nbsp;·&nbsp;</span>
+                    <span title="总收藏数{{ video.collect }}" class="dm">{{ video.collect }} 收藏</span>
+{#                    <span>2021-09-01 17:00:04</span>#}
+                    <!----></div>
+            </div>
+            <div id="v_desc" class="video-desc report-wrap-module report-scroll-module" scrollshow="true">
+                <div class="desc-info desc-v2 open"><span>{{ video.description }}</span></div><!----><!----></div>
+            <div id="comment" class="comment-m report-wrap-module report-scroll-module" scrollshow="true">
+                <div class="common">
+                    <div class="b-head"><span class="b-head-t">精选评论</span></div>
+                    <div class="comment" style="position: relative;">
+                        <div class="bb-comment ">
+                            <div class="comment-list ">
+                                {% for comment in comment_list %}
+                                <div class="list-item reply-wrap " data-id="" scrollshow="true">
+                                    <div class="user-face">
+                                        <div class="bili-avatar"></div>
+                                    </div>
+                                    <div class="con ">
+                                        <div class="user"><a data-usercard-mid=""
+                                                             href="#" target="_black"
+                                                             class="name" style="color:#FB7299">用户</a></div>
+                                        <p class="text">{{ comment }}</p>
+                                        <div class="paging-box"></div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="bottom-page paging-box-big"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="r-con">
+            <div id="v_upinfo" class="up-info report-wrap-module report-scroll-module" scrollshow="true">
+                <div class="u-face"><a href="/author/detail/{{ author.uid }}" target="_blank"
+                                       report-id="head"
+                                       class="fa">
+                    <div class="bili-avatar">
+
+                        <img class="bili-avatar-img bili-avatar-face bili-avatar-img-radius"
+                             data-src="/static/avatar/{{ author.uid }}.jpg"
+                             alt="" src="/static/avatar/{{ author.uid }}.jpg">
+
+                    </div>
+                </a></div>
+                <div class="up-info_right">
+                    <div class="name" style="line-height:20px;height:20px;"><!----><a
+                            href="/author/detail/{{ author.uid }}" target="_blank" report-id="name"
+                            class="username"
+                            style="color:white;">
+                        {{ author.name }}
+                        <span class="mask"></span></a><a href="#" target="_blank" class="message">
+                        <i class="van-icon-videodetails_messag"></i>
+                        {{ author.fans }} 粉丝
+                    </a></div>
+                    <div title="{{ author.introduction }}" class="desc">
+                        {{ author.introduction }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div></div>
+    </div>
+
+{% endblock %}

@@ -43,7 +43,7 @@ def create_database() -> None:
                    like         INTEGER  NOT NULL,
                    coin         INTEGER  NOT NULL, 
                    collect      INTEGER  NOT NULL,
-                   up_uid       INTEGER  NOT NULL,
+                   up_uid       TEXT     NOT NULL,
                    avid         INTEGER  NOT NULL)''')
         db.execute('''CREATE TABLE IF NOT EXISTS ups
                       (uid          TEXT  PRIMARY KEY,
