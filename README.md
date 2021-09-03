@@ -38,8 +38,8 @@ You can visit your web page in browser through `127.0.0.1:8000`
 
 - [x] framework - 2021/09/01
 - [x] list page - 2021/09/01
-- [ ] detail page
-- [ ] author page
+- [x] detail page - 2021/09/02
+- [x] author page - 2021/09/03
 - [ ] search page
 
 ### Data Analyse
