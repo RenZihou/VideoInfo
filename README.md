@@ -6,13 +6,32 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 
 ## Usage
 
+This project uses virtual environment:
+
+* in powershell:
+
+```
+> .\venv\Scripts\activate.ps1
+```
+
+to exit, type `deactivate`.
+
+* in command line:
+
+```commandline
+cd .\venv\Scripts
+activate.bat
+```
+
+to exit, type `deactivate.bat`.
+
 ### Run the crawler
 
 Go into the project path and execute command:
 
 ```
-> .\venv\Scripts\python.exe .\crawler\database.py
-> .\venv\Scripts\python.exe .\crawler\bili_crawler_new.py
+(venv) > python .\data\database.py
+(venv) > python .\crawler\bili_crawler_new.py
 ```
 
 Then your database will be initiated and all the data and images would be stored in `./data`
@@ -20,10 +39,10 @@ Then your database will be initiated and all the data and images would be stored
 ### Run the web server
 
 ```
-> .\venv\Scripts\python.exe .\manage.py runserver 0.0.0.0:8000
+> python .\manage.py runserver
 ```
 
-You can visit your web page in browser through `127.0.0.1:8000`
+Then You can visit your web page in browser through `127.0.0.1:8000`
 
 ## Develop Progress
 
