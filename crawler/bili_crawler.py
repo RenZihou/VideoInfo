@@ -138,21 +138,26 @@ class BiliCrawler(object):
             return
         try:
             with BiliDB() as db:
-                search_detail = list(db.execute('SELECT * FROM videos WHERE bvid = ?', (self.bvid,)))
+                search_detail = list(db.execute('SELECT avid, up_uid FROM videos WHERE bvid = ?', (self.bvid,)))
                 if search_detail:
                     has_comment = bool(list(db.execute('SELECT * FROM comments WHERE bvid = ?', (self.bvid,))))
                     if not has_comment:
-                        self.detail['aid'] = search_detail[0][-1]  # -1: avid column
+                        self.detail['aid'] = search_detail[0][0]  # -1: avid column
                         self.__get_comment().__save_comment()
-                    mid = search_detail[0][-2]  # -2: up_uid column
+                    mid = search_detail[0][1]  # -2: up_uid column
                     has_up = bool(list(db.execute('SELECT * FROM ups WHERE uid = ?', (mid,))))
                     if not has_up:
                         self.detail['owner']['mid'] = mid
                         self.__get_up().__download_avatar().__save_up()
                 else:
                     self.__get_pagelist().__get_detail().__download_cover().__save_detail()
-                    self.__get_comment().__save_comment()
-                    self.__get_up().__download_avatar().__save_up()
+                    has_comment = bool(list(db.execute('SELECT * FROM comments WHERE bvid = ?', (self.bvid,))))
+                    if not has_comment:
+                        self.__get_comment().__save_comment()
+                    mid = self.detail['owner']['mid']
+                    has_up = bool(list(db.execute('SELECT * FROM ups WHERE uid = ?', (mid,))))
+                    if not has_up:
+                        self.__get_up().__download_avatar().__save_up()
         except Exception as e:
             logging.fatal('Exception caught when fetching %s: %s' % (self.bvid, e))
         return
@@ -290,12 +295,14 @@ class BiliCrawler(object):
             return self
         with BiliDB() as db:
             cmd = '''INSERT INTO videos 
-                     (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid, avid)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+                     (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid, avid,
+                     pub_time, duration, category)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.bvid, self.detail['title'], self.detail['desc'], self.__get_video_url(),
                              self.detail['pic'], self.detail['stat']['view'], self.detail['stat']['danmaku'],
                              self.detail['stat']['like'], self.detail['stat']['coin'], self.detail['stat']['favorite'],
-                             self.detail['owner']['mid'], self.detail['aid']))
+                             self.detail['owner']['mid'], self.detail['aid'], self.detail['pubdate'],
+                             self.detail['duration'], self.detail['tname'],))
             logging.info('Saved detail of %s into database.' % self.bvid)
         return self
 
@@ -339,6 +346,6 @@ class BiliCrawler(object):
 
 
 if __name__ == '__main__':
-    BiliCrawler.crawl_all(size=50, start='BV1Cv411N7pg')
+    BiliCrawler.crawl_all(size=50, start='BV143411B7Ap')
     # BiliCrawler.fix_image()
     pass

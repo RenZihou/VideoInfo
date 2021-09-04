@@ -3,6 +3,7 @@
 
 from math import ceil
 from time import time
+from datetime import datetime
 
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
@@ -30,7 +31,7 @@ def video_index(request, page: int = 1):
     t1 = time()
     with BiliDB() as db:
         keys = ('avid', 'bvid', 'title', 'description', 'pic', 'play', 'danmaku',
-                'like', 'coin', 'collect', 'up_uid')
+                'like', 'coin', 'collect', 'up_uid', 'duration')
         page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0] / 20)
         if not 1 <= page <= page_total:
             page = 1
@@ -39,12 +40,14 @@ def video_index(request, page: int = 1):
         if not search:
             video_list = list(map(
                 lambda v: dict(zip(keys, v)),
-                db.execute('''SELECT avid, bvid, title, description, pic, play, danmaku, like, coin, collect, up_uid
+                db.execute('''SELECT avid, bvid, title, description, pic, play, 
+                              danmaku, like, coin, collect, up_uid, duration
                               FROM videos WHERE (? <= ROWID) AND (ROWID < ?)''', (start, end,))))
         else:
             video_list = list(map(
                 lambda v: dict(zip(keys, v)),
-                db.execute('''SELECT avid, bvid, title, description, pic, play, danmaku, like, coin, collect, up_uid
+                db.execute('''SELECT avid, bvid, title, description, pic, play,
+                              danmaku, like, coin, collect, up_uid, duration
                               FROM videos WHERE title LIKE ?''', ('%%%s%%' % search,))))
             page_total = ceil(len(video_list) / 20)
             video_list = video_list[start:end]
@@ -133,15 +136,16 @@ def video_detail(request, bvid: str = ''):
     :return:
     """
     keys_v = ('avid', 'bvid', 'title', 'description', 'url', 'play', 'danmaku',
-              'like', 'coin', 'collect', 'up_uid')
+              'like', 'coin', 'collect', 'up_uid', 'pub_time')
     keys_a = ('uid', 'name', 'introduction', 'fans')
     with BiliDB() as db:
         video = list(db.execute('''SELECT avid, bvid, title, description, url, 
-                                   play, danmaku, like, coin, collect, up_uid
+                                   play, danmaku, like, coin, collect, up_uid, pub_time
                                    FROM videos WHERE bvid = ?''', (bvid,)))
         if not video:  # empty list: video info doesn't exist
             return HttpResponse('No video found.')
         video = dict(zip(keys_v, video[0]))
+        video['pub_time'] = datetime.fromtimestamp(video['pub_time']).strftime('%Y-%m-%d %H:%M:%S')
         author = list(db.execute('''SELECT uid, name, introduction, fans 
                                     FROM ups WHERE uid = ?''', (video['up_uid'],)))
         if not author:
