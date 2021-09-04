@@ -8,16 +8,20 @@ this crawler parse the html to get data
 
 from collections import defaultdict
 from datetime import datetime, timedelta
+from functools import partial
 from os import path
 from random import random
 from time import sleep
 from typing import List
 import logging
 
+import requests
 from requests_html import HTMLSession  # used to render html
 from tqdm import tqdm
 
 from data.database import BiliDB
+
+BiliDB = partial(BiliDB, db='data_new.sqlite3')  # specify database
 
 logging.basicConfig(filename=path.join(path.dirname(__file__), '../log/bili_crawler_new.log'), filemode='a',
                     format='%(asctime)s,%(msecs)d %(name)s %(levelname)s %(message)s',
@@ -124,7 +128,10 @@ class BiliCrawler(object):
             t_detail = r_detail.html
             self.detail['title'] = t_detail.xpath('//*[@id="viewbox_report"]/h1/span/text()')[0].strip()
             self.detail['desc'] = t_detail.xpath('//*[@id="v_desc"]/div[2]/span/text()')[0].strip()
-            self.detail['pic'] = ''  # TODO: fetch cover url
+            self.detail['pub_time'] = int(datetime.strptime(
+                t_detail.xpath('//*[@id="viewbox_report"]/div/span[3]/text()')[0].strip(),
+                '%Y-%m-%d %H:%M:%S').timestamp())
+            self.detail['pic'] = t_detail.xpath('/html/head/meta[12]/@content')[0]
             self.detail['stat']['view'] = \
                 self.__standardize_num(t_detail.xpath('//*[@id="viewbox_report"]/div/span[1]/text()')[0])
             self.detail['stat']['danmaku'] = \
@@ -148,6 +155,20 @@ class BiliCrawler(object):
                     self.comment.append(comm)
                 except IndexError:
                     continue
+
+            # here is three info (avid, category and duration) that is almost
+            # impossible to crawl through the video page
+            # and since none of them is in the class requirement,
+            # i choose to use api to fetch them for convenience
+            api = 'https://api.bilibili.com/x/web-interface/view'
+            r_api = requests.get(api, params={'bvid': self.bvid}, headers=self.headers)
+            if r_api.status_code == 200:
+                j_api = r_api.json()
+                self.detail['aid'] = j_api['data']['aid']
+                self.detail['tname'] = j_api['data']['tname']
+                self.detail['duration'] = j_api['data']['duration']
+            else:
+                logging.warning('Failed to request api of %s, got status code: %d' % (self.bvid, r_api.status_code))
         else:  # error status code
             logging.warning('Failed to request detail of %s, got status code: %d.' % (self.bvid, r_detail.status_code))
         return self
@@ -157,7 +178,6 @@ class BiliCrawler(object):
         get up details: name, uid, intro, avatar, fans
         :return: self
         """
-        # TODO: get up info from video page
         if not self.detail:
             logging.fatal('Calling to get_up before details crawled.')
             return self
@@ -185,44 +205,51 @@ class BiliCrawler(object):
             logging.fatal('Calling to save_detail before details crawled.')
             return self
         with BiliDB() as db:
-            cmd = '''INSERT INTO videos (bvid, title, description, url, pic, play, danmaku, like, coin, collect, up_uid)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
+            cmd = '''INSERT INTO videos (bvid, title, description, url, pic, play, 
+                     danmaku, like, coin, collect, up_uid, pub_time, avid, category, duration)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.bvid, self.detail['title'], self.detail['desc'], self.__get_video_url(),
                              self.detail['pic'], self.detail['stat']['view'], self.detail['stat']['danmaku'],
                              self.detail['stat']['like'], self.detail['stat']['coin'], self.detail['stat']['favorite'],
-                             self.detail['owner']['mid']))
+                             self.detail['owner']['mid'], self.detail['pub_time'], self.detail['aid'],
+                             self.detail['tname'], self.detail['duration']))
             logging.info('Saved detail of %s into database' % self.bvid)
         return self
 
-    def __save_comment(self) -> None:
+    def __save_comment(self) -> 'BiliCrawler':
         """
         save crawled comment to database
         :return: None
         """
         if not self.comment:  # no comment yet
             logging.fatal('Calling to save_comment before comment crawled.')
-            return
+            return self
+        self.comment += ([''] * (5 - len(self.comment)))
         with BiliDB() as db:
             cmd = '''INSERT INTO comments (bvid, comment_1, comment_2, comment_3, comment_4, comment_5)
                      VALUES (?, ?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.bvid, *self.comment))
             logging.info('Saved comment of %s into database.' % self.bvid)
-        return
+        return self
 
-    def __save_up(self) -> None:
+    def __save_up(self) -> 'BiliCrawler':
         """
         save crawled up info to database
         :return: None
         """
         if not self.up:  # no up info yet
             logging.fatal('Calling to save_up before up info crawled')
-            return
+            return self
+        mid = self.up['mid']
         with BiliDB() as db:
+            if list(db.execute('SELECT * FROM ups WHERE uid = ?', (mid,))):
+                logging.info('Skipped up info of %s: already exist.' % mid)
+                return self
             cmd = '''INSERT INTO ups (uid, name, introduction, avatar, fans)
                      VALUES (?, ?, ?, ?, ?)'''
             db.execute(cmd, (self.up['mid'], self.up['name'], self.up['sign'], self.up['face'], self.up['fans']))
             logging.info('Saved up info of %s into database' % self.up['mid'])
-        return
+        return self
 
     def __get_video_url(self) -> str:
         """
@@ -245,5 +272,7 @@ class BiliCrawler(object):
 
 
 if __name__ == '__main__':
-    BiliCrawler.crawl_all(size=1)
+    # BiliCrawler.crawl_all(size=1)
+    BiliCrawler('BV1Ub4y1m7Uf').crawl()
+    BiliCrawler.session.close()
     pass

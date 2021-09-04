@@ -31,7 +31,7 @@ def create_database(db: str = 'data.sqlite3') -> None:
     create empty database
     :return: None
     """
-    with BiliDB() as db:
+    with BiliDB(db) as db:
         db.execute('''CREATE TABLE IF NOT EXISTS videos
                    (bvid        TEXT     PRIMARY KEY,
                    title        TEXT     NOT NULL,
@@ -65,5 +65,5 @@ def create_database(db: str = 'data.sqlite3') -> None:
 
 
 if __name__ == '__main__':
-    create_database()
+    create_database('data_new.sqlite3')
     pass
