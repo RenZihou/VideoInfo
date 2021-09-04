@@ -13,8 +13,8 @@ class BiliDB(object):
     """
     connect to the database
     """
-    def __init__(self):
-        self.conn = sqlite3.connect(path.join(path.dirname(__file__), 'data.sqlite'))
+    def __init__(self, db: str = 'data.sqlite3'):
+        self.conn = sqlite3.connect(path.join(path.dirname(__file__), db))
         self.cur = self.conn.cursor()
 
     def __enter__(self):
@@ -26,7 +26,7 @@ class BiliDB(object):
         self.conn.close()
 
 
-def create_database() -> None:
+def create_database(db: str = 'data.sqlite3') -> None:
     """
     create empty database
     :return: None

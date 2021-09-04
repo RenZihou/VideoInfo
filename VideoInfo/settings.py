@@ -78,7 +78,7 @@ WSGI_APPLICATION = 'VideoInfo.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'data/data.sqlite',
+        'NAME': BASE_DIR / 'data/data.sqlite3',
     }
 }
 
