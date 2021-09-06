@@ -52,12 +52,12 @@ def plot_category():
                       legend={'x': 0.5, 'y': 1, 'xanchor': 'right'})
     fig['layout']['xaxis1'] = {'title': '<b>play</b>', 'domain': (0, 0.5)}
     fig['layout']['yaxis1'] = {'title': '<b>coin</b>'}
-    fig['layout']['xaxis2'] = {'title': '<b>coin</b>', 'domain': (0.6, 1), 'anchor': 'y2'}
+    fig['layout']['xaxis2'] = {'title': '<b>average coin</b>', 'domain': (0.6, 1), 'anchor': 'y2'}
     fig['layout']['yaxis2'] = {'title': '<b>category</b>', 'domain': (0, 0.45), 'anchor': 'x2', 'showticklabels': False}
-    fig['layout']['xaxis3'] = {'title': '<b>play</b>', 'domain': (0.6, 1), 'anchor': 'y3'}
+    fig['layout']['xaxis3'] = {'title': '<b>average play</b>', 'domain': (0.6, 1), 'anchor': 'y3'}
     fig['layout']['yaxis3'] = {'title': '<b>category</b>', 'domain': (0.55, 1), 'anchor': 'x3', 'showticklabels': False}
 
-    py.offline.plot(fig, filename='./01_category.html')
+    py.offline.plot(fig, filename='./output/01_category.html')
     return
 
 
@@ -72,7 +72,7 @@ def plot_duration():
                            OR (category = '原创音乐') OR (category = '翻唱')''', con=conn)
     df = df[df['duration'] < 600][df['coin'] < 50_000]  # less than 10 minutes
     bins = np.linspace(0, 600, 31)  # step: 20 sec
-    hist = df.groupby(pd.cut(df['duration'], bins))
+    hist = df.groupby([pd.cut(df['duration'], bins), 'category']).count().unstack()['coin']
 
     fig = make_subplots(specs=[[{'secondary_y': True}]])
     colors = ('#D12910', '#4F5EAA', '#15E2C5', '#F5C81B')
@@ -82,7 +82,7 @@ def plot_duration():
                                  marker={'color': color, 'opacity': 0.7}, mode='markers', legendgroup=category,
                                  name='coin', legendgrouptitle={'text': category}, xaxis='x1', yaxis='y1'),
                       secondary_y=False)
-        fig.add_trace(go.Scatter(x=bins, y=hist.apply(lambda g: g[g['category'] == category].count()['category']),
+        fig.add_trace(go.Scatter(x=bins + 10, y=hist[category],
                                  line={'color': color, 'shape': 'spline'}, legendgroup=category, name='distribution',
                                  xaxis='x1', yaxis='y2'),
                       secondary_y=True)
@@ -95,7 +95,7 @@ def plot_duration():
     fig.update_yaxes(title_text='<b>coin</b>', secondary_y=False)
     fig.update_yaxes(title_text='<b>distribution</b>', showticklabels=False, showgrid=False, secondary_y=True)
 
-    py.offline.plot(fig, filename='02_duration.html')
+    py.offline.plot(fig, filename='./output/02_duration.html')
     return
 
 
@@ -111,35 +111,38 @@ def plot_pub_time():
                            OR (category = '原创音乐') OR (category = '翻唱')''', con=conn)
     df = df[df['coin'] < 50_000]
     df['weekday'] = df['pub_time'].apply(lambda x: datetime.fromtimestamp(x).strftime('%A'))
-    df['hour'] = df['pub_time'].apply(lambda x: datetime.fromtimestamp(x).strftime('%H'))
+    df['hour'] = df['pub_time'].apply(lambda x: int(datetime.fromtimestamp(x).strftime('%H')))
     weekdays = ('Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')
-    g1 = df.groupby(['weekday', 'category']).mean().unstack()['coin'].reindex(weekdays)
-    g2 = df.groupby(['hour', 'category']).mean().unstack()['coin']
+    hours = ('midnight', 'dawn', 'morning', 'afternoon', 'evening', 'night')  # 0 4 8 12 16 20 24
+    h_bins = np.linspace(0, 24, 7)  # step: 4 hr
+    group_d = df.groupby(['weekday', 'category']).mean().unstack()['coin'].reindex(weekdays)
+    group_h = df.groupby([pd.cut(df['hour'], h_bins), 'category']).mean().unstack()['coin']
+    group_h.index = hours
 
-    fig = make_subplots(cols=2, rows=1)
+    fig = make_subplots(cols=2, rows=1, specs=[[{'type': 'polar'}] * 2])
     colors = ('#D12910', '#4F5EAA', '#15E2C5', '#F5C81B')
     categories = ('VOCALOID·UTAU', 'MV', '原创音乐', '翻唱')
     for color, category in zip(colors, categories):
-        fig.add_trace(go.Scatter(x=g1.index, y=g1[category], line={'color': color, 'shape': 'spline'},
-                                 legendgroup=category, name=category, xaxis='x1', yaxis='y1'),
+        fig.add_trace(go.Scatterpolar(theta=list(group_d.index) + [weekdays[0]],  # repeat first point to close the line
+                                      r=list(group_d[category]) + [group_d[category][weekdays[0]]],
+                                      line={'color': color, 'shape': 'spline'},
+                                      legendgroup=category, name=category),
                       col=1, row=1)
-        fig.add_trace(go.Scatter(x=g2.index, y=g2[category], line={'color': color, 'shape': 'spline'},
-                                 legendgroup=category, name=category, xaxis='x2', yaxis='y2', showlegend=False),
+        fig.add_trace(go.Scatterpolar(theta=list(group_h.index) + [hours[0]],
+                                      r=list(group_h[category]) + [group_h[category][hours[0]]],
+                                      line={'color': color, 'shape': 'spline'},
+                                      legendgroup=category, name=category, showlegend=False),
                       col=2, row=1)
 
     fig.update_layout(height=700, width=1400,
                       title={'text': '<b>Popularity of Variant Publish Time</b>', 'xanchor': 'center', 'x': 0.5})
-    fig['layout']['xaxis1'] = {'title': '<b>published weekday</b>', 'domain': (0, 0.45)}
-    fig['layout']['yaxis1'] = {'title': '<b>coin</b>'}
-    fig['layout']['xaxis2'] = {'title': '<b>published hour</b>', 'domain': (0.55, 1), 'anchor': 'y2'}
-    fig['layout']['yaxis2'] = {'title': '<b>coin</b>', 'anchor': 'x2'}
 
-    py.offline.plot(fig, filename='03_pub_time.html')
+    py.offline.plot(fig, filename='./output/03_pub_time.html')
     return
 
 
 if __name__ == '__main__':
-    # plot_category()
+    plot_category()
     plot_duration()
-    # plot_pub_time()
+    plot_pub_time()
     pass
