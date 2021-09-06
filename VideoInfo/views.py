@@ -48,7 +48,7 @@ def video_index(request, page: int = 1):
                 lambda v: dict(zip(keys, v)),
                 db.execute('''SELECT avid, bvid, title, description, pic, play,
                               danmaku, like, coin, collect, up_uid, duration
-                              FROM videos WHERE title LIKE ?''', ('%%%s%%' % search,))))
+                              FROM videos WHERE (title LIKE ?) OR (description LIKE ?)''', ('%%%s%%' % search,) * 2)))
             page_total = ceil(len(video_list) / 20)
             video_list = video_list[start:end]
 
@@ -110,7 +110,7 @@ def author_index(request, page: int = 1):
             author_list = list(map(
                 lambda a: dict(zip(keys, a)),
                 db.execute('''SELECT uid, name, introduction, fans
-                              FROM ups WHERE (name LIKE ?)''', ('%%%s%%' % search,))
+                              FROM ups WHERE (name LIKE ?) OR (introduction LIKE ?)''', ('%%%s%%' % search,) * 2)
             ))
             page_total = ceil(len(author_list) / 20)
             author_list = author_list[start:end]
