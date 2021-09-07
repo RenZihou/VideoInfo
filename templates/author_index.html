@@ -25,7 +25,7 @@
             <div class="search-loupe">
                 <i class="icon-loupe"></i>
             </div>
-            <div><span>搜索用时：{{ time_ms }}</span></div>
+            <div><span>搜索用时：{{ time_ms }} · 搜索结果：{{ total }} 个</span></div>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
         {% for author in author_list %}
             <li class="user-item matrix">
             <div class="up-face">
-                <a href="/author/detail/{{ author.uid }}" title="{{ author.name }}" class="face-img">
+                <a href="/author/detail/{{ author.uid }}" title="{{ author.name }}" target="_blank" class="face-img">
                     <div class="lazy-img">
                         <img alt src="/static/avatar/{{ author.uid }}.jpg">
                     </div>
@@ -45,7 +45,7 @@
             </div>
             <div class="info-wrap">
                 <div class="headline">
-                    <a href="/author/detail/{{ author.uid }}" title="{{ author.name }}" class="title">
+                    <a href="/author/detail/{{ author.uid }}" title="{{ author.name }}" target="_blank" class="title">
                         {{ author.name }}</a>
                 </div>
                 <div class="up-info clearfix">

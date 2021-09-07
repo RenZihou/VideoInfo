@@ -33246,8 +33246,22 @@
     <link rel="stylesheet" type="text/css" href="/static/css/author_detail_2.css">
     <link rel="stylesheet" type="text/css" href="/static/css/author_detail_24.css">
     <link rel="stylesheet" type="text/css" href="/static/css/author_detail_12.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/video_index_0.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/video_index_1.css">
 </head>
-<body class="round-corner dark simplify-comment">
+
+
+<body class="round-corner dark simplify-comment">                 
+
+<div class="head-contain">
+    <div class="search-wrap">
+        <div class="">
+            {% block search %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
 <div id="app" class="fans">
     {% block body %}
     {% endblock %}

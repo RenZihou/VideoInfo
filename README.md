@@ -63,5 +63,5 @@ Then You can visit your web page in browser through `127.0.0.1:8000`
 
 ### Data Analyse
 
-- [ ] visualization
+- [x] visualization - 2021/09/06
 - [ ] conclusion

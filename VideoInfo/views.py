@@ -32,7 +32,8 @@ def video_index(request, page: int = 1):
     with BiliDB() as db:
         keys = ('avid', 'bvid', 'title', 'description', 'pic', 'play', 'danmaku',
                 'like', 'coin', 'collect', 'up_uid', 'duration')
-        page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0] / 20)
+        total = list(db.execute('SELECT MAX(ROWID) FROM videos'))[0][0]
+        page_total = ceil(total / 20)
         if not 1 <= page <= page_total:
             page = 1
         start = (page - 1) * 20 + 1
@@ -49,8 +50,9 @@ def video_index(request, page: int = 1):
                 db.execute('''SELECT avid, bvid, title, description, pic, play,
                               danmaku, like, coin, collect, up_uid, duration
                               FROM videos WHERE (title LIKE ?) OR (description LIKE ?)''', ('%%%s%%' % search,) * 2)))
-            page_total = ceil(len(video_list) / 20)
-            video_list = video_list[start:end]
+            total = len(video_list)
+            page_total = ceil(total / 20)
+            video_list = video_list[start - 1:end - 1]
 
         for video in video_list:
             up_uid = video['up_uid']
@@ -60,18 +62,21 @@ def video_index(request, page: int = 1):
                 name = '<unknown>'
             video['up_name'] = name
     t2 = time()
-    # TODO: search result is empty
-    page_start = max(2, page - 3)
-    page_end = min(page_total - 1, page + 3)
-    page_list = list(range(page_start, page_end + 1))
-    page_list = sum(([1], [-1] if page_list[0] != 2 else [], page_list,
-                     [-1] if page_list[-1] != page_total - 1 else [], [page_total]), [])
+    print(page_total)
+    if page_total < 3:
+        page_list = list(range(1, page_total + 1))
+    else:
+        page_start = max(2, page - 3)
+        page_end = min(page_total - 1, page + 3)
+        page_list = list(range(page_start, page_end + 1))
+        page_list = sum(([1], [-1] if page_list[0] != 2 else [], page_list,
+                         [-1] if page_list[-1] != page_total - 1 else [], [page_total]), [])
     page_prev = page - 1 if page != 1 else -1
     page_next = page + 1 if page != page_total else -1
     return render(request=request, template_name='video_index.html',
                   context={'video_list': video_list, 'page_list': page_list, 'total_page': page_total,
                            'current_page': page, 'next_page': page_next, 'prev_page': page_prev,
-                           'search_keyword': search, 'time_ms':  '%.1f ms' % ((t2 - t1) * 1000)})
+                           'search_keyword': search, 'time_ms': '%.1f ms' % ((t2 - t1) * 1000), 'total': total,})
 
 
 def author_index(request, page: int = 1):
@@ -96,7 +101,8 @@ def author_index(request, page: int = 1):
     t1 = time()
     with BiliDB() as db:
         keys = ('uid', 'name', 'introduction', 'fans')
-        page_total = ceil(list(db.execute('SELECT MAX(ROWID) FROM ups'))[0][0] / 10)
+        total = list(db.execute('SELECT MAX(ROWID) FROM ups'))[0][0]
+        page_total = ceil(total / 10)
         if not 1 <= page <= page_total:
             page = 1
         start = (page - 1) * 10 + 1
@@ -112,20 +118,24 @@ def author_index(request, page: int = 1):
                 db.execute('''SELECT uid, name, introduction, fans
                               FROM ups WHERE (name LIKE ?) OR (introduction LIKE ?)''', ('%%%s%%' % search,) * 2)
             ))
-            page_total = ceil(len(author_list) / 20)
-            author_list = author_list[start:end]
+            total = len(author_list)
+            page_total = ceil(total / 20)
+            author_list = author_list[start - 1:end - 1]
     t2 = time()
-    page_start = max(2, page - 3)
-    page_end = min(page_total - 1, page + 3)
-    page_list = list(range(page_start, page_end + 1))
-    page_list = sum(([1], [-1] if page_list[0] != 2 else [], page_list,
-                     [-1] if page_list[-1] != page_total - 1 else [], [page_total]), [])
+    if page_total < 3:
+        page_list = list(range(1, page_total + 1))
+    else:
+        page_start = max(2, page - 3)
+        page_end = min(page_total - 1, page + 3)
+        page_list = list(range(page_start, page_end + 1))
+        page_list = sum(([1], [-1] if page_list[0] != 2 else [], page_list,
+                         [-1] if page_list[-1] != page_total - 1 else [], [page_total]), [])
     page_prev = page - 1 if page != 1 else -1
     page_next = page + 1 if page != page_total else -1
     return render(request=request, template_name='author_index.html',
                   context={'author_list': author_list, 'page_list': page_list, 'total_page': page_total,
                            'current_page': page, 'next_page': page_next, 'prev_page': page_prev,
-                           'search_keyword': search, 'time_ms': '%.1f ms' % ((t2 - t1) * 1000)})
+                           'search_keyword': search, 'time_ms': '%.1f ms' % ((t2 - t1) * 1000), 'total': total,})
 
 
 def video_detail(request, bvid: str = ''):

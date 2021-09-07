@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- saved from url=(0042)file:///C:/Users/alex/Downloads/video.html -->
+
 <html class="elegant-scrollbar"
       style="--custom-control-background-opacity:0.64; --navbar-bounds-padding:0 0%; --navbar-blur-opacity:0.7; --side-bar-offset:0vh;">
 <head itemprop="video" itemscope="" itemtype="http://schema.org/VideoObject">
@@ -14619,6 +14619,8 @@
         }, "session": "5ce22f8fae82d44941372c8f47f88086"
     }</script>
     <link rel="stylesheet" href="/static/css/video_detail.css">
+    <link rel="stylesheet" href="/static/css/video_index_0.css">
+    <link rel="stylesheet" href="/static/css/video_index_1.css">
     <style>.player-wrapper {
         position: relative;
     }
@@ -64626,6 +64628,16 @@
     }</style>
 </head>
 <body class="round-corner dark simplify-comment fixed-navbar"><!-- built files will be auto injected -->
+
+<div class="head-contain">
+    <div class="search-wrap">
+        <div class="">
+            {% block search %}
+            {% endblock %}
+        </div>
+    </div>
+</div>
+
 <div id="app"><!----><!---->
     {% block body %}
     {% endblock %}
