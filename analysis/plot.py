@@ -35,7 +35,7 @@ def plot_category():
     categories = ('VOCALOID·UTAU', 'MV', '原创音乐', '翻唱')
     for color, category in zip(colors, categories):
         fig.add_trace(go.Scatter(x=df[df['category'] == category]['play'], y=df[df['category'] == category]['coin'],
-                                 marker={'color': color, 'opacity': 0.5}, mode='markers',
+                                 marker={'color': color, 'opacity': 0.5}, mode='markers', trendline='ols',
                                  name=category, xaxis='x1', yaxis='y1', legendgroup=category),
                       row=1, col=1)
         fig.add_trace(go.Bar(x=[df[df['category'] == category]['coin'].mean()], y=[category],

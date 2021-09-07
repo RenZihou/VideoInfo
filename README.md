@@ -6,32 +6,13 @@ Author: [Ren Zihou](https://github.com/RenZihou)
 
 ## Usage
 
-This project uses virtual environment:
-
-* in powershell:
-
-```
-> .\venv\Scripts\activate.ps1
-```
-
-to exit, type `deactivate`.
-
-* in command line:
-
-```commandline
-cd .\venv\Scripts
-activate.bat
-```
-
-to exit, type `deactivate.bat`.
-
 ### Run the crawler
 
 Go into the project path and execute command:
 
 ```
-(venv) > python .\data\database.py
-(venv) > python .\crawler\bili_crawler_new.py
+> python .\data\database.py
+> python .\crawler\bili_crawler_new.py
 ```
 
 Then your database will be initiated and all the data and images would be stored in `./data`
@@ -43,6 +24,14 @@ Then your database will be initiated and all the data and images would be stored
 ```
 
 Then You can visit your web page in browser through `127.0.0.1:8000`
+
+### Plot the graph
+
+```
+> python .\analysis\plot.py
+```
+
+The results will be saved in `./analysis/output`
 
 ## Develop Progress
 
@@ -64,4 +53,4 @@ Then You can visit your web page in browser through `127.0.0.1:8000`
 ### Data Analyse
 
 - [x] visualization - 2021/09/06
-- [ ] conclusion
+- [x] conclusion - 2021/09/07
